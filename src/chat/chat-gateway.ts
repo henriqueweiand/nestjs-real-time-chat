@@ -1,0 +1,39 @@
+import {
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
+
+import { Server } from 'socket.io';
+
+@WebSocketGateway(3005, { cors: { origin: '*' } })
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server: Server;
+
+  handleConnection(client: any) {
+    console.log('Client connected', client.id);
+
+    client.broadcast.emit('user-joined', {
+      message: `User joined the chat: ${client.id}`,
+      clientId: client.id,
+    });
+  }
+
+  handleDisconnect(client: any) {
+    console.log('Client disconnected', client.id);
+
+    this.server.emit('user-left', {
+      message: `User left the chat: ${client.id}`,
+      clientId: client.id,
+    });
+  }
+
+  @SubscribeMessage('newMessage')
+  handleNewMessage(@MessageBody() message: any): void {
+    console.log('New message:', message); //
+    this.server.emit('message', message);
+  }
+}
