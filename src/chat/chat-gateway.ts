@@ -1,4 +1,5 @@
 import {
+  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -7,7 +8,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway(3005, { cors: { origin: '*' } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -22,7 +23,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  handleDisconnect(client: any) {
+  handleDisconnect(@ConnectedSocket() client: Socket) {
     console.log('Client disconnected', client.id);
 
     this.server.emit('user-left', {
@@ -33,7 +34,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('newMessage')
   handleNewMessage(@MessageBody() message: any): void {
-    console.log('New message:', message); //
+    console.log('New message:', message);
     this.server.emit('message', message);
   }
 }
